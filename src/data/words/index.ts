@@ -2,9 +2,14 @@ import { WORDS_A } from './wordsA'
 import { WORDS_B } from './wordsB'
 import { WORDS_C } from './wordsC'
 import { WORDS_D } from './wordsD'
+import { toRomaji } from '../../lib/romaji'
 import type { Word } from './types'
 
 export * from './types'
+
+export function wordRomaji(w: Word): string {
+  return w.romaji ?? toRomaji(w.kana)
+}
 
 export function wordId(w: Word): string {
   return `word:${w.kana}|${w.kanji ?? ''}`

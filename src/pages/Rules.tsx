@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { toRomaji } from '../lib/romaji'
 import { speak } from '../lib/speech'
 
 interface Example {
   jp: string
   ko: string
   meaning: string
+  romaji: string
 }
 
 interface Lesson {
@@ -16,7 +18,8 @@ interface Lesson {
   pairs?: [Example, Example][]
 }
 
-const ex = (jp: string, ko: string, meaning: string): Example => ({ jp, ko, meaning })
+/** 문장처럼 띄어쓰기·조사 발음이 필요한 경우 romaji를 직접 준다 */
+const ex = (jp: string, ko: string, meaning: string, romaji = toRomaji(jp)): Example => ({ jp, ko, meaning, romaji })
 
 const LESSONS: Lesson[] = [
   {
@@ -103,10 +106,10 @@ const LESSONS: Lesson[] = [
       '단어 안에서는 원래대로 읽어요. (はな 하나, へや 헤야)',
     ],
     examples: [
-      ex('わたしは がくせいです', '와타시와 각세-데스', '저는 학생입니다'),
-      ex('がっこうへ いきます', '각코-에 이키마스', '학교에 갑니다'),
-      ex('みずを のみます', '미즈오 노미마스', '물을 마십니다'),
-      ex('こんにちは', '콘니치와', '안녕하세요 (낮 인사)'),
+      ex('わたしは がくせいです', '와타시와 각세-데스', '저는 학생입니다', 'watashi wa gakusei desu'),
+      ex('がっこうへ いきます', '각코-에 이키마스', '학교에 갑니다', 'gakkou e ikimasu'),
+      ex('みずを のみます', '미즈오 노미마스', '물을 마십니다', 'mizu o nomimasu'),
+      ex('こんにちは', '콘니치와', '안녕하세요 (낮 인사)', 'konnichiwa'),
     ],
   },
 ]
@@ -149,6 +152,7 @@ function ExampleButton({ e }: { e: Example }) {
       <span className="text-lg">🔊</span>
       <span>
         <span className="font-jp block text-lg">{e.jp}</span>
+        <span className="block text-sm text-rose-400">{e.romaji}</span>
         <span className="text-xs text-slate-500">
           {e.ko} · {e.meaning}
         </span>
@@ -205,6 +209,7 @@ function PairQuiz({ pairs }: { pairs: [Example, Example][] }) {
               return (
                 <button key={e.jp} type="button" onClick={() => choose(e)} className={`rounded-lg border-2 p-2 ${style}`}>
                   <span className="font-jp block text-lg">{e.jp}</span>
+                  <span className="block text-xs text-rose-400">{e.romaji}</span>
                   <span className="text-xs text-slate-500">
                     {e.ko} · {e.meaning}
                   </span>

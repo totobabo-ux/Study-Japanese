@@ -3,6 +3,7 @@ import type { Face, StudyCard } from '../lib/cards'
 import { db, recordAnswer, type Stat } from '../lib/db'
 import { Session, choiceFace, type Question, type SessionConfig } from '../lib/session'
 import { speak } from '../lib/speech'
+import { useShowRomaji } from '../lib/storage'
 
 /** 글자 수에 따라 크기를 줄인다 */
 function textSize(face: Face, big: boolean): string {
@@ -15,17 +16,18 @@ function textSize(face: Face, big: boolean): string {
   return len <= 2 ? 'text-4xl' : len <= 4 ? 'text-2xl' : len <= 7 ? 'text-xl' : 'text-base'
 }
 
-function FaceView({ face, big }: { face: Face; big?: boolean }) {
+function FaceView({ face, big, romaji }: { face: Face; big?: boolean; romaji?: boolean }) {
   return (
     <>
-      <span className={`${face.jp ? 'font-jp' : 'font-semibold'} ${textSize(face, !!big)} break-keep text-center leading-tight`}>{face.text}</span>
-      {face.sub && <span className={`${face.jp ? 'font-jp' : ''} ${big ? 'mt-2 text-xl' : 'text-sm'} text-slate-400`}>{face.sub}</span>}
+      <span className={`${face.jp ? 'font-jp' : 'font-semibold'} ${textSize(face, !!big)} ${face.jp ? 'break-all' : 'break-keep'} text-center leading-tight`}>{face.text}</span>
+      {romaji && face.romaji && <span className={`${big ? 'mt-2 text-lg' : 'text-xs'} text-rose-400`}>{face.romaji}</span>}
+      {face.sub && <span className={`${face.jp ? 'font-jp' : ''} ${big ? 'mt-1 text-xl' : 'text-sm'} text-slate-400`}>{face.sub}</span>}
     </>
   )
 }
 
 function revealText(card: StudyCard): string {
-  return [card.front.text, card.front.sub, card.back.text, card.back.sub].filter(Boolean).join(' · ')
+  return [card.front.text, card.front.romaji, card.front.sub, card.back.text, card.back.sub].filter(Boolean).join(' · ')
 }
 
 export function QuizRunner({ config, onExit }: { config: SessionConfig; onExit: () => void }) {
@@ -33,6 +35,7 @@ export function QuizRunner({ config, onExit }: { config: SessionConfig; onExit: 
   const [question, setQuestion] = useState<Question | null>(null)
   const [picked, setPicked] = useState<StudyCard | null>(null)
   const [done, setDone] = useState(false)
+  const [showRomaji, setShowRomaji] = useShowRomaji()
 
   const start = useCallback(async () => {
     const stats = await db.stats.bulkGet(config.cards.map((c) => c.id))
@@ -115,6 +118,14 @@ export function QuizRunner({ config, onExit }: { config: SessionConfig; onExit: 
         <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-200">
           <div className="h-full bg-rose-500 transition-all" style={{ width: `${(session.answered / session.total) * 100}%` }} />
         </div>
+        <button
+          type="button"
+          onClick={() => setShowRomaji(!showRomaji)}
+          title="로마자 독음 보기"
+          className={`rounded-md border px-1.5 py-0.5 text-xs font-semibold ${showRomaji ? 'border-rose-300 bg-rose-50 text-rose-600' : 'border-slate-200 text-slate-400'}`}
+        >
+          Aa
+        </button>
         <span className="text-sm tabular-nums text-slate-500">
           {Math.min(session.answered + (picked ? 0 : 1), session.total)}/{session.total}
         </span>
@@ -131,7 +142,7 @@ export function QuizRunner({ config, onExit }: { config: SessionConfig; onExit: 
           </button>
         ) : (
           <div className="flex flex-col items-center">
-            <FaceView face={direction === 'fb' ? card.front : card.back} big />
+            <FaceView face={direction === 'fb' ? card.front : card.back} big romaji={showRomaji} />
             {direction === 'fb' && card.kind === 'word' && (
               <button type="button" onClick={() => speak(card.speak)} className="mt-3 text-sm text-slate-400 hover:text-rose-500">
                 🔊 듣기
@@ -159,7 +170,7 @@ export function QuizRunner({ config, onExit }: { config: SessionConfig; onExit: 
               className={`relative flex min-h-20 flex-col items-center justify-center rounded-2xl border-2 p-3 transition active:scale-95 ${style}`}
             >
               <span className="absolute left-2.5 top-1.5 hidden text-xs text-slate-300 sm:block">{i + 1}</span>
-              <FaceView face={choiceFace(c, direction)} />
+              <FaceView face={choiceFace(c, direction)} romaji={showRomaji} />
             </button>
           )
         })}
@@ -201,7 +212,7 @@ function QuizResult({ session, onRetry, onExit }: { session: Session; onRetry: (
                 className="flex flex-col items-center rounded-xl border border-red-200 bg-red-50 px-4 py-2"
               >
                 <span className="font-jp text-2xl">{c.front.text}</span>
-                <span className="text-xs text-slate-500">{[c.front.sub, c.back.text, c.back.sub].filter(Boolean).join(' · ')}</span>
+                <span className="text-xs text-slate-500">{[c.front.romaji, c.front.sub, c.back.text, c.back.sub].filter(Boolean).join(' · ')}</span>
               </button>
             ))}
           </div>

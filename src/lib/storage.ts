@@ -1,5 +1,10 @@
 import { useEffect, useState } from 'react'
 
+/** 단어·문장에 로마자 독음을 보여줄지 (전역 설정) */
+export function useShowRomaji() {
+  return usePersistentState('show.romaji', true)
+}
+
 /** 화면 설정 등 가벼운 값을 localStorage에 보관 */
 export function usePersistentState<T>(key: string, initial: T) {
   const [value, setValue] = useState<T>(() => {

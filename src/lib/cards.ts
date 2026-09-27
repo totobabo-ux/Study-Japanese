@@ -1,10 +1,12 @@
 import { ALL_KANA, CONFUSABLES, baseKanaOf, display, kanaByChar, statId, type Category, type Kana, type Script } from '../data/kana'
-import { WORDS, wordId, type Word } from '../data/words'
+import { WORDS, wordId, wordRomaji, type Word } from '../data/words'
 import type { Stat } from './db'
 
 export interface Face {
   text: string
   sub?: string
+  /** 로마자 독음 (설정에서 켰을 때 표시) */
+  romaji?: string
   jp: boolean
 }
 
@@ -63,7 +65,7 @@ export function wordCard(w: Word): StudyCard {
   return {
     id: wordId(w),
     kind: 'word',
-    front: { text: w.kana, sub: w.kanji, jp: true },
+    front: { text: w.kana, sub: w.kanji, romaji: wordRomaji(w), jp: true },
     back: { text: w.meaning, jp: false },
     speak: w.kana,
     soundKey: w.kana,

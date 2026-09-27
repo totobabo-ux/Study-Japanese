@@ -1,12 +1,12 @@
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useMemo, useState } from 'react'
 import { Tabs } from '../components/Tabs'
-import { TOPICS, WORDS, wordId, type TopicId, type Word } from '../data/words'
+import { TOPICS, WORDS, wordId, wordRomaji, type TopicId, type Word } from '../data/words'
 import { isWordUnlocked, missingKana } from '../lib/cards'
 import { db, mastery, type Stat } from '../lib/db'
 import { navigate } from '../lib/router'
 import { speak } from '../lib/speech'
-import { usePersistentState } from '../lib/storage'
+import { usePersistentState, useShowRomaji } from '../lib/storage'
 import { MASTERY_STYLE } from './KanaTable'
 import { presetWordTopics } from './Quiz'
 
@@ -30,6 +30,7 @@ export function WordsPage({ tab = 'list' }: { tab?: string }) {
 }
 
 function WordList({ statMap }: { statMap: Map<string, Stat> }) {
+  const [showRomaji, setShowRomaji] = useShowRomaji()
   const [topic, setTopic] = usePersistentState<TopicId | 'all'>('words.topic', 'all')
   const [unlockedOnly, setUnlockedOnly] = usePersistentState('words.unlockedOnly', false)
   const [query, setQuery] = useState('')
@@ -40,7 +41,7 @@ function WordList({ statMap }: { statMap: Map<string, Stat> }) {
     (w) =>
       (topic === 'all' || w.topic === topic) &&
       (!unlockedOnly || isWordUnlocked(w, statMap)) &&
-      (!q || w.kana.includes(q) || w.kanji?.includes(q) || w.meaning.includes(q)),
+      (!q || w.kana.includes(q) || w.kanji?.includes(q) || w.meaning.includes(q) || wordRomaji(w).replace(/[ ']/g, '').includes(q.toLowerCase().replace(/[ ']/g, ''))),
   )
 
   return (
@@ -63,12 +64,16 @@ function WordList({ statMap }: { statMap: Map<string, Stat> }) {
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="검색 (일본어 또는 뜻)"
+          placeholder="검색 (일본어, 로마자, 뜻)"
           className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-rose-400"
         />
         <label className="flex items-center gap-2 text-sm text-slate-600">
           <input type="checkbox" checked={unlockedOnly} onChange={(e) => setUnlockedOnly(e.target.checked)} className="size-4 accent-rose-600" />
           해금된 것만
+        </label>
+        <label className="flex items-center gap-2 text-sm text-slate-600">
+          <input type="checkbox" checked={showRomaji} onChange={(e) => setShowRomaji(e.target.checked)} className="size-4 accent-rose-600" />
+          로마자
         </label>
       </div>
 
@@ -105,14 +110,14 @@ function WordList({ statMap }: { statMap: Map<string, Stat> }) {
 
       <ul className="space-y-1.5">
         {list.map((w) => (
-          <WordRow key={wordId(w)} w={w} statMap={statMap} />
+          <WordRow key={wordId(w)} w={w} statMap={statMap} showRomaji={showRomaji} />
         ))}
       </ul>
     </div>
   )
 }
 
-function WordRow({ w, statMap }: { w: Word; statMap: Map<string, Stat> }) {
+function WordRow({ w, statMap, showRomaji }: { w: Word; statMap: Map<string, Stat>; showRomaji: boolean }) {
   const unlocked = isWordUnlocked(w, statMap)
   const missing = unlocked ? [] : missingKana(w, statMap)
   return (
@@ -125,6 +130,7 @@ function WordRow({ w, statMap }: { w: Word; statMap: Map<string, Stat> }) {
         <span className="min-w-0 flex-1">
           <span className="font-jp text-lg">{w.kana}</span>
           {w.kanji && <span className="font-jp ml-2 text-sm text-slate-400">{w.kanji}</span>}
+          {showRomaji && <span className="block text-sm text-rose-400">{wordRomaji(w)}</span>}
           <span className="block text-sm text-slate-600">{w.meaning}</span>
           {w.note && <span className="block text-xs text-slate-400">{w.note}</span>}
         </span>
@@ -141,12 +147,17 @@ function WordRow({ w, statMap }: { w: Word; statMap: Map<string, Stat> }) {
 }
 
 function Phrases({ statMap }: { statMap: Map<string, Stat> }) {
+  const [showRomaji, setShowRomaji] = useShowRomaji()
   const phrases = WORDS.filter((w) => w.topic === 'greetings')
   return (
     <div className="space-y-4 pt-4">
       <p className="text-sm text-slate-500">
         바로 써먹을 수 있는 인사말과 생활 표현이에요. 글자를 다 몰라도 소리로 먼저 익혀 두면 좋아요.
       </p>
+      <label className="flex items-center gap-2 text-sm text-slate-600">
+        <input type="checkbox" checked={showRomaji} onChange={(e) => setShowRomaji(e.target.checked)} className="size-4 accent-rose-600" />
+        로마자 보기
+      </label>
       <button
         type="button"
         onClick={() => {
@@ -158,7 +169,7 @@ function Phrases({ statMap }: { statMap: Map<string, Stat> }) {
       </button>
       <ul className="space-y-1.5">
         {phrases.map((w) => (
-          <WordRow key={wordId(w)} w={w} statMap={statMap} />
+          <WordRow key={wordId(w)} w={w} statMap={statMap} showRomaji={showRomaji} />
         ))}
       </ul>
     </div>

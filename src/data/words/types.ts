@@ -21,6 +21,8 @@ export interface Word {
   kana: string
   /** 흔히 쓰는 한자 표기. 보통 가나로만 쓰는 말이면 생략 */
   kanji?: string
+  /** 로마자 독음. 생략하면 가나에서 자동 변환 (문장은 띄어쓰기를 위해 직접 적는다) */
+  romaji?: string
   /** 한국어 뜻 (간결하게, 여러 뜻은 ", "로 구분) */
   meaning: string
   topic: TopicId
