@@ -22,8 +22,7 @@ export function KanaTable() {
 
   return (
     <div className="space-y-6">
-      <header className="space-y-3">
-        <h1 className="text-2xl font-bold">문자표</h1>
+      <header className="space-y-3 pt-4">
         <div className="flex flex-wrap items-center gap-3">
           <Segmented
             value={script}

@@ -84,3 +84,56 @@ export function kanaOfRows(rowIds: string[]): Kana[] {
 }
 
 export const ALL_KANA: Kana[] = kanaOfRows(KANA_ROWS.map((r) => r.id))
+
+export function toHiragana(s: string): string {
+  return s.replace(/[\u30a1-\u30f6]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60))
+}
+
+/** 모양이 비슷해서 헷갈리기 쉬운 글자 묶음 */
+export const CONFUSABLES: Record<Script, string[][]> = {
+  hiragana: [
+    ['さ', 'ち'],
+    ['き', 'さ'],
+    ['ぬ', 'め', 'あ', 'お'],
+    ['ね', 'れ', 'わ'],
+    ['は', 'ほ', 'け'],
+    ['る', 'ろ'],
+    ['い', 'り', 'こ'],
+    ['に', 'た', 'こ'],
+    ['う', 'つ', 'ら'],
+    ['ま', 'も', 'よ'],
+    ['く', 'へ', 'し'],
+    ['す', 'む'],
+  ],
+  katakana: [
+    ['シ', 'ツ'],
+    ['ソ', 'ン', 'リ'],
+    ['ク', 'ケ', 'タ'],
+    ['ス', 'ヌ', 'ホ'],
+    ['コ', 'ユ', 'ロ'],
+    ['ウ', 'ワ', 'フ', 'ラ'],
+    ['チ', 'テ'],
+    ['ア', 'マ', 'ヤ'],
+    ['ノ', 'メ', 'ナ'],
+    ['ル', 'レ'],
+    ['ヲ', 'ラ'],
+    ['カ', 'ヤ', 'セ'],
+    ['キ', 'サ', 'モ'],
+  ],
+}
+
+const KANA_BY_H = new Map(ALL_KANA.map((k) => [k.h, k]))
+
+export function kanaByChar(ch: string): Kana | undefined {
+  return KANA_BY_H.get(toHiragana(ch))
+}
+
+/** 작은 글자·장음 기호 등을 학습 단위 글자로 바꾼다. 가나가 아니면 null */
+const SMALL_TO_BASE: Record<string, string> = { ぁ: 'あ', ぃ: 'い', ぅ: 'う', ぇ: 'え', ぉ: 'お', っ: 'つ', ゃ: 'や', ゅ: 'ゆ', ょ: 'よ', ゎ: 'わ', ゔ: 'う' }
+
+export function baseKanaOf(ch: string): { kana: Kana; script: Script } | null {
+  const isKata = /[\u30a1-\u30f6]/.test(ch)
+  const h = toHiragana(ch)
+  const kana = KANA_BY_H.get(SMALL_TO_BASE[h] ?? h)
+  return kana ? { kana, script: isKata ? 'katakana' : 'hiragana' } : null
+}
